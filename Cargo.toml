@@ -17,3 +17,6 @@ travis-ci = { repository = "timvisee/version-compare" }
 [features]
 default = []
 dev = []
+
+[dev-dependencies]
+pretty_assertions = "*"

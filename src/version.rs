@@ -13,6 +13,9 @@ use comp_op::CompOp;
 use version_manifest::VersionManifest;
 use version_part::VersionPart;
 
+#[cfg(test)]
+use pretty_assertions::assert_eq;
+
 /// Version struct, which is a representation for a parsed version string.
 ///
 /// A version in string format can be parsed using methods like `Version::from("1.2.3");`.
