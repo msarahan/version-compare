@@ -290,105 +290,87 @@ impl<'a> PartialEq for Version<'a> {
 #[cfg(test)]
 mod tests {
     use crate::comp_op::CompOp;
-    use crate::test::test_version::{TEST_VERSIONS, TEST_VERSIONS_ERROR};
-    use crate::test::test_version_set::TEST_VERSION_SETS;
-    // use crate::version_part::VersionPart;
-
     use super::Version;
 
-    #[test]
     // TODO: This doesn't really test whether this method fully works
-    fn from() {
+    parametrize_versions!{
+    fn from(v_string: &str, n_parts: usize) {
         // Test whether parsing works for each test version
-        for version in TEST_VERSIONS {
-            assert!(Version::from(&version.0).is_some());
-        }
+        assert!(Version::from(v_string).is_some());
+    }}
 
+    parametrize_versions_errors!{
+    fn from_with_invalid_versions(v_string: &str, n_parts: usize) {
         // Test whether parsing works for each test invalid version
-        for version in TEST_VERSIONS_ERROR {
-            assert!(Version::from(&version.0).is_none());
+        assert!(Version::from(v_string).is_none());
+    }}
+
+    parametrize_versions! {
+    fn as_str(v_string: &str, n_parts: usize) {
+        // The input version string must be the same as the returned string
+        assert_eq!(Version::from(v_string).unwrap().as_str(), v_string);
         }
     }
 
-    #[test]
-    fn as_str() {
-        // Test for each test version
-        for version in TEST_VERSIONS {
-            // The input version string must be the same as the returned string
-            assert_eq!(Version::from(&version.0).unwrap().as_str(), version.0);
+    parametrize_versions! {
+    fn part(v_string: &str, n_parts: usize) {
+        // Create a version object
+        let ver = Version::from(v_string).unwrap();
+
+        // Loop through each part
+        for i in 0..n_parts {
+            assert_eq!(ver.part(i), Ok(&ver.parts[i]));
+        }
+
+        // A value outside the range must return an error
+        assert!(ver.part(n_parts).is_err());
         }
     }
 
-    #[test]
-    fn part() {
-        // Test for each test version
-        for version in TEST_VERSIONS {
-            // Create a version object
-            let ver = Version::from(&version.0).unwrap();
-
-            // Loop through each part
-            for i in 0..version.1 {
-                assert_eq!(ver.part(i), Ok(&ver.parts[i]));
-            }
-
-            // A value outside the range must return an error
-            assert!(ver.part(version.1).is_err());
+    parametrize_versions! {
+    fn parts(v_string: &str, n_parts: usize) {
+        // The number of parts must match
+        assert_eq!(Version::from(v_string).unwrap().parts().len(), n_parts);
         }
     }
 
-    #[test]
-    fn parts() {
-        // Test for each test version
-        for version in TEST_VERSIONS {
-            // The number of parts must match
-            assert_eq!(Version::from(&version.0).unwrap().parts().len(), version.1);
-        }
-    }
-
-    #[test]
-    fn part_count() {
-        // Test for each test version
-        for version in TEST_VERSIONS {
+    parametrize_versions! {
+    fn part_count(v_string: &str, n_parts: usize) {
             // The number of parts must match the metadata
-            assert_eq!(Version::from(&version.0).unwrap().part_count(), version.1);
+            assert_eq!(Version::from(v_string).unwrap().part_count(), n_parts);
+        }
+    }
+
+    parametrize_versions_set! {
+    fn compare(a: &str, b: &str, operator: &CompOp) {
+        // Get both versions
+        let version_a = Version::from(a).unwrap();
+        let version_b = Version::from(b).unwrap();
+
+        // Compare them
+        assert_eq!(
+            version_a.compare(&version_b),
+            operator.clone(),
+        );
+    }
+    }
+
+    parametrize_versions_set! {
+    fn compare_to(a: &str, b: &str, operator: &CompOp) {
+        // Get both versions
+        let version_a = Version::from(a).unwrap();
+        let version_b = Version::from(b).unwrap();
+
+        // Test
+        assert!(version_a.compare_to(&version_b, operator));
+
+        // Make sure the inverse operator is not correct
+        assert_eq!(version_a.compare_to(&version_b, &operator.invert()), false);
         }
     }
 
     #[test]
-    fn compare() {
-        // Compare each version in the version set
-        for entry in TEST_VERSION_SETS {
-            // Get both versions
-            let version_a = Version::from(&entry.0).unwrap();
-            let version_b = Version::from(&entry.1).unwrap();
-
-            // Compare them
-            assert_eq!(
-                version_a.compare(&version_b),
-                entry.2.clone(),
-                "Testing that {} is {} {}",
-                &entry.0,
-                &entry.2.sign(),
-                &entry.1
-            );
-        }
-    }
-
-    #[test]
-    fn compare_to() {
-        // Compare each version in the version set
-        for entry in TEST_VERSION_SETS {
-            // Get both versions
-            let version_a = Version::from(&entry.0).unwrap();
-            let version_b = Version::from(&entry.1).unwrap();
-
-            // Test
-            assert!(version_a.compare_to(&version_b, &entry.2));
-
-            // Make sure the inverse operator is not correct
-            assert_eq!(version_a.compare_to(&version_b, &entry.2.invert()), false);
-        }
-
+    fn compare_to_neq() {
         // Assert an exceptional case, compare to not equal
         assert!(Version::from("1.2")
             .unwrap()
@@ -412,48 +394,46 @@ mod tests {
         );
     }
 
-    #[test]
-    fn partial_cmp() {
-        // Compare each version in the version set
-        for entry in TEST_VERSION_SETS {
-            // Get both versions
-            let version_a = Version::from(&entry.0).unwrap();
-            let version_b = Version::from(&entry.1).unwrap();
+    parametrize_versions_set! {
+    fn partial_cmp(a: &str, b: &str, operator: &CompOp) {
+        // Get both versions
+        let version_a = Version::from(a).unwrap();
+        let version_b = Version::from(b).unwrap();
 
-            // Compare and assert
-            match entry.2 {
-                CompOp::Eq => assert!(version_a == version_b),
-                CompOp::Lt => assert!(version_a < version_b),
-                CompOp::Gt => assert!(version_a > version_b),
-                _ => {}
-            }
+        // Compare and assert
+        match operator {
+            &CompOp::Eq => assert!(version_a == version_b),
+            &CompOp::Lt => assert!(version_a < version_b),
+            &CompOp::Gt => assert!(version_a > version_b),
+            _ => {}
         }
     }
+    }
 
-    #[test]
-    fn partial_eq() {
-        // Compare each version in the version set
-        for entry in TEST_VERSION_SETS {
-            // Skip entries that are less or equal, or greater or equal
-            match entry.2 {
-                CompOp::Le | CompOp::Ge => continue,
-                _ => {}
-            }
-
-            // Get both versions
-            let version_a = Version::from(&entry.0).unwrap();
-            let version_b = Version::from(&entry.1).unwrap();
-
-            // Determine what the result should be
-            let result = match entry.2 {
-                CompOp::Eq => true,
-                _ => false,
-            };
-
-            // Test
-            assert_eq!(version_a == version_b, result);
+    parametrize_versions_set!{
+    fn partial_eq(a: &str, b: &str, operator: &CompOp) {
+        // Skip entries that are less or equal, or greater or equal
+        match operator {
+            &CompOp::Le | &CompOp::Ge => return,
+            _ => {}
         }
 
+        // Get both versions
+        let version_a = Version::from(a).unwrap();
+        let version_b = Version::from(b).unwrap();
+
+        // Determine what the result should be
+        let result = match operator {
+            &CompOp::Eq => true,
+            _ => false,
+        };
+
+        // Test
+        assert_eq!(version_a == version_b, result);
+    }}
+
+    #[test]
+    fn partial_eq_neq() {
         // Assert an exceptional case, compare to not equal
         assert!(Version::from("1.2").unwrap() != Version::from("1.2.3").unwrap());
     }

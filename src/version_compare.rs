@@ -76,7 +76,7 @@ impl VersionCompare {
         }
 
         // Compare and return the result
-        Ok(a_ver.unwrap().compare_to(&b_ver.unwrap(), &operator))
+        Ok(a_ver.unwrap().compare_to(&b_ver.unwrap(), operator))
     }
 }
 
@@ -84,55 +84,47 @@ impl VersionCompare {
 #[cfg(test)]
 mod tests {
     use crate::comp_op::CompOp;
-    use crate::test::test_version_set::{TEST_VERSION_SETS, TEST_VERSION_SETS_ERROR};
-
     use super::VersionCompare;
 
-    #[test]
-    fn compare() {
-        // Compare each version in the version set
-        for entry in TEST_VERSION_SETS {
-            assert_eq!(
-                VersionCompare::compare(&entry.0, &entry.1),
-                Ok(entry.2.clone()),
-                "Testing that {} is {} {}", &entry.0, &entry.2.sign(), &entry.1
-            );
+    parametrize_versions_set!{
+    fn compare(a: &str, b: &str, operator: &CompOp) {
+        match VersionCompare::compare(a, b) == Ok(operator.clone()) {
+            false => panic!(),
+            _ => {}
         }
+    }}
 
-        // Compare each error version in the version set
-        for entry in TEST_VERSION_SETS_ERROR {
-            let result = VersionCompare::compare(&entry.0, &entry.1);
+    parametrize_errors_set!{
+    fn compare_error(a: &str, b: &str, operator: &CompOp) {
+        let result = VersionCompare::compare(a, b);
 
-            if result.is_ok() {
-                assert!(result != Ok(entry.2.clone()));
-            }
+        if result.is_ok() {
+            assert!(result != Ok(operator.clone()));
         }
-    }
+    }}
 
-    #[test]
-    fn compare_to() {
-        // Compare each version in the version set
-        for entry in TEST_VERSION_SETS {
-            // Test
-            assert!(VersionCompare::compare_to(&entry.0, &entry.1, &entry.2).unwrap());
+    parametrize_versions_set!{
+    fn compare_to(a: &str, b: &str, operator: &CompOp) {
+        // Test
+        assert!(VersionCompare::compare_to(a, b, operator).unwrap());
 
-            // Make sure the inverse operator is not correct
-            assert_eq!(
-                VersionCompare::compare_to(&entry.0, &entry.1, &entry.2.invert()).unwrap(),
-                false
-            );
+        // Make sure the inverse operator is not correct
+        assert_eq!(
+            VersionCompare::compare_to(a, b, operator).unwrap(),
+            false
+        );
+    }}
+
+    parametrize_errors_set!{
+    fn compare_to_errors(a: &str, b: &str, operator: &CompOp) {
+        let result = VersionCompare::compare_to(a, b, operator);
+
+        if result.is_ok() {
+            assert!(!result.unwrap())
         }
-
-        // Compare each error version in the version set
-        for entry in TEST_VERSION_SETS_ERROR {
-            let result = VersionCompare::compare_to(&entry.0, &entry.1, &entry.2);
-
-            if result.is_ok() {
-                assert!(!result.unwrap())
-            }
-        }
-
-        // Assert an exceptional case, compare to not equal
-        assert!(VersionCompare::compare_to("1.2.3", "1.2", &CompOp::Ne).unwrap());
-    }
+    }}
+//
+//        // Assert an exceptional case, compare to not equal
+//        assert!(VersionCompare::compare_to("1.2.3", "1.2", CompOp::Ne).unwrap());
+//    }
 }

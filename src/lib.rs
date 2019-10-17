@@ -53,6 +53,13 @@
 //!
 #[macro_use] extern crate lazy_static;
 
+// Applies only to the test module - not to below.  Load test module first because its macros
+//   need to be defined before the other code gets compiled.
+#[cfg(test)]
+#[macro_use] mod test;
+#[cfg(test)]
+#[macro_use] extern crate rstest;
+
 pub mod comp_op;
 pub mod version;
 pub mod version_compare;
@@ -61,8 +68,6 @@ pub mod parsers;
 mod version_part;
 mod custom_parts;
 
-#[cfg(test)]
-mod test;
 
 // Reexports
 pub use crate::comp_op::CompOp;

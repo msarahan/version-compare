@@ -1,2 +1,1 @@
-pub mod test_version;
-pub mod test_version_set;
+#[macro_use] pub mod macros;

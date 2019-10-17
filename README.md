@@ -98,8 +98,8 @@ fn main() {
 
     // Easily compare version strings
     assert_eq!(VersionCompare::compare(&a, &b).unwrap(), CompOp::Lt);
-    assert_eq!(VersionCompare::compare_to(&a, &b, &CompOp::Le).unwrap(), true);
-    assert_eq!(VersionCompare::compare_to(&a, &b, &CompOp::Gt).unwrap(), false);
+    assert_eq!(VersionCompare::compare_to(&a, &b, CompOp::Le).unwrap(), true);
+    assert_eq!(VersionCompare::compare_to(&a, &b, CompOp::Gt).unwrap(), false);
 
     // Version string parsing
     let a_ver = Version::from(a).unwrap();
@@ -112,7 +112,7 @@ fn main() {
     assert_eq!(a_ver != b_ver, true);
     assert_eq!(a_ver.compare(&b_ver), CompOp::Lt);
     assert_eq!(b_ver.compare(&a_ver), CompOp::Gt);
-    assert_eq!(a_ver.compare_to(&b_ver, &CompOp::Lt), true);
+    assert_eq!(a_ver.compare_to(&b_ver, CompOp::Lt), true);
 
     // Match
     match a_ver.compare(&b_ver) {
