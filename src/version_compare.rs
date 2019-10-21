@@ -110,7 +110,7 @@ mod tests {
 
         // Make sure the inverse operator is not correct
         assert_eq!(
-            VersionCompare::compare_to(a, b, operator).unwrap(),
+            VersionCompare::compare_to(a, b, &operator.opposite()).unwrap(),
             false
         );
     }}
