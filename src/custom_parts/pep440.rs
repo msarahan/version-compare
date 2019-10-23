@@ -10,7 +10,7 @@ pub struct PEP440String<'a> {
 }
 
 impl<'a> PEP440String<'a> {
-    fn new(input: &'a str) -> PEP440String {
+    pub fn from(input: &'a str) -> PEP440String {
         lazy_static! {
             static ref RE: Regex = Regex::new(r"^(\d*)([a-zA-Z]*)(\d*)").unwrap();
         }
@@ -94,7 +94,7 @@ mod tests {
 
     #[test]
     fn compare_implict_leading_zero() {
-        assert_eq!(PEP440String::new("0dev"), PEP440String::new("dev"));
+        assert_eq!(PEP440String::from("0dev"), PEP440String::from("dev"));
         // epoch of any value trumps integer (priority)
         // assert!(VersionPart::Epoch(value: 0) > VersionPart::Integer(value: 1);
         // assert!(Version::Epoch{0} > Version::String{"abc"});

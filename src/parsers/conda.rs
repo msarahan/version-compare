@@ -1,5 +1,5 @@
 use crate::version_part::VersionPart;
-use core::panicking::panic_fmt;
+use crate::custom_parts::pep440::PEP440String;
 
 /// Split the given version string, in it's version parts.
 pub fn conda_parser(
@@ -10,52 +10,34 @@ pub fn conda_parser(
 
     // Split at epoch
     let epoch_split: Vec<&str> = version.split("!").collect();
-    match epoch_split.len() {
-        2 => parts.push(VersionPart::Epoch(epoch_split[0].parse().unwrap())),
-        1 => {},
+    let post_epoch_split: &str = match epoch_split.len() {
+        2 => {
+            parts.push(VersionPart::Epoch(epoch_split[0].parse().unwrap()));
+            epoch_split[1]
+        },
+        1 => {
+            epoch_split[0]
+        },
         _ => panic!("Duplicated epoch separator (!)")
     };
 
-
-
     // Get any local version string
-    let local_version_split: Vec<&str> = epoch_split[-1].split("+").collect();
-    let local: Vec<&str> = match local_version_split.len() {
-        1 => Vec::new(),
-        2 => local_version_split[-1].replace("_", ".").split(".").collect(),
+    let local_version_split: Vec<&str> = post_epoch_split.split("+").collect();
+    let local: &str = match local_version_split.len() {
+        1 => "",
+        2 => local_version_split[1],
         _ => panic!("duplicated local version separator (+)")
     };
 
     // Split at periods
-    let mut version_split: Vec<&str> = local_version_split[0].replace("_", ".").split(".");
-    version_split.extend(&local);
-
-//    # split components into runs of numerals and non-numerals,
-//    # convert numerals to int, handle special strings
-//    for v in (self.version, self.local):
-//    for k in range(len(v)):
-//        c = version_split_re.findall(v[k])
-//    if not c:
-//        raise InvalidVersionSpec(vstr, "empty version component")
-//    for j in range(len(c)):
-//    if c[j].isdigit():
-//        c[j] = int(c[j])
-//    elif c[j] == 'post':
-//    # ensure number < 'post' == infinity
-//    c[j] = float('inf')
-//    elif c[j] == 'dev':
-//    # ensure '*' < 'DEV' < '_' < 'a' < number
-//    # by upper-casing (all other strings are lower case)
-//    c[j] = 'DEV'
-//    if v[k][0].isdigit():
-//        v[k] = c
-//    else:
-//    # components shall start with a number to keep numbers and
-//    # strings in phase => prepend fillvalue
-//    v[k] = [self.fillvalue] + c
+    let mut version_split: Vec<&str> = local_version_split[0].split(|c| c == '_' || c == '.')
+        .collect();
+    let local_split: Vec<&str> = local.split(|c| c == '_' || c == '.').collect();
+    version_split.extend(local_split);
 
     // Loop over the parts, and parse them
-    for part in split {
+    for part in version_split {
+        println!("{}", part);
         // Skip empty parts
         if part.is_empty() {
             continue;
@@ -69,7 +51,7 @@ pub fn conda_parser(
             }
             Err(_) => {
                 // Push the text part to the vector
-                parts.push(VersionPart::PEP440String(part));
+                parts.push(VersionPart::PEP440String(PEP440String::from(part)));
             }
         }
     }
@@ -80,4 +62,16 @@ pub fn conda_parser(
 
     // Return the list of parts
     Some(parts)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::conda_parser;
+
+    # [test]
+    fn test_less_specific_less_than_more_specific() {
+        // 0.4 < 0.4.0
+        let parts = conda_parser("0.4").unwrap();
+        assert_eq!(parts.len(), 2);
+    }
 }
